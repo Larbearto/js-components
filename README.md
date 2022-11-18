@@ -45,199 +45,106 @@ Find the Content Useful? [You can always buy me a coffee](https://www.buymeacoff
 28. Wikipedia
 29. Comfy Sloth
 
-const form = document.querySelector(".grocery-form");
-const alert = document.querySelector(".alert");
-const grocery = document.getElementById("grocery");
-const submitBtn = document.querySelector(".submit-btn");
-const container = document.querySelector(".grocery-container");
-const list = document.querySelector(".grocery-list");
-const clearBtn = document.querySelector(".clear-btn");
-// edit option
-let editElement;
-let editFlag = false;
-let editID = "";
-// **\*\*** event listeners \***\*\*\*\*\***
+import data from './data.js'
+const container = document.querySelector('.slide-container')
+const nextBtn = document.querySelector('.next-btn')
+const prevBtn = document.querySelector('.prev-btn')
 
-// submit form
-form.addEventListener("submit", addItem);
-// clear list
-clearBtn.addEventListener("click", clearItems);
-// display items onload
-window.addEventListener("DOMContentLoaded", setupItems);
-
-// **\*\*** functions \***\*\*\*\*\***
-
-// add item
-function addItem(e) {
-e.preventDefault();
-const value = grocery.value;
-const id = new Date().getTime().toString();
-
-if (value !== "" && !editFlag) {
-const element = document.createElement("article");
-let attr = document.createAttribute("data-id");
-attr.value = id;
-element.setAttributeNode(attr);
-element.classList.add("grocery-item");
-element.innerHTML = `<p class="title">${value}</p> <div class="btn-container"> <!-- edit btn --> <button type="button" class="edit-btn"> <i class="fas fa-edit"></i> </button> <!-- delete btn --> <button type="button" class="delete-btn"> <i class="fas fa-trash"></i> </button> </div> `;
-// add event listeners to both buttons;
-const deleteBtn = element.querySelector(".delete-btn");
-deleteBtn.addEventListener("click", deleteItem);
-const editBtn = element.querySelector(".edit-btn");
-editBtn.addEventListener("click", editItem);
-
-    // append child
-    list.appendChild(element);
-    // display alert
-    displayAlert("item added to the list", "success");
-    // show container
-    container.classList.add("show-container");
-    // set local storage
-    addToLocalStorage(id, value);
-    // set back to default
-    setBackToDefault();
-
-} else if (value !== "" && editFlag) {
-editElement.innerHTML = value;
-displayAlert("value changed", "success");
-
-    // edit  local storage
-    editLocalStorage(editID, value);
-    setBackToDefault();
-
-} else {
-displayAlert("please enter value", "danger");
-}
-}
-// display alert
-function displayAlert(text, action) {
-alert.textContent = text;
-alert.classList.add(`alert-${action}`);
-// remove alert
-setTimeout(function () {
-alert.textContent = "";
-alert.classList.remove(`alert-${action}`);
-}, 1000);
+// if length is 1 hide buttons
+if (data.length === 1) {
+nextBtn.style.display = 'none'
+prevBtn.style.display = 'none'
 }
 
-// clear items
-function clearItems() {
-const items = document.querySelectorAll(".grocery-item");
-if (items.length > 0) {
-items.forEach(function (item) {
-list.removeChild(item);
-});
+// if length is 2, add copies of slides
+let people = [...data]
+if (data.length === 2) {
+people = [...data, ...data]
 }
-container.classList.remove("show-container");
-displayAlert("empty list", "danger");
-setBackToDefault();
-localStorage.removeItem("list");
+container.innerHTML = people
+.map((person, slideIndex) => {
+const { img, name, job, text } = person
+let position = 'next'
+if (slideIndex === 0) {
+position = 'active'
 }
-
-// delete item
-
-function deleteItem(e) {
-const element = e.currentTarget.parentElement.parentElement;
-const id = element.dataset.id;
-
-list.removeChild(element);
-
-if (list.children.length === 0) {
-container.classList.remove("show-container");
+if (slideIndex === people.length - 1) {
+position = 'last'
 }
-displayAlert("item removed", "danger");
-
-setBackToDefault();
-// remove from local storage
-removeFromLocalStorage(id);
+if (data.length <= 1) {
+position = 'active'
 }
+return `<article class="slide ${position}">
+<img src=${img} class="img" alt="${name}"/>
 
-// edit item
-function editItem(e) {
-const element = e.currentTarget.parentElement.parentElement;
-// set edit item
-editElement = e.currentTarget.parentElement.previousElementSibling;
-// set form value
-grocery.value = editElement.innerHTML;
-editFlag = true;
-editID = element.dataset.id;
-//
-submitBtn.textContent = "edit";
+  <h4>${name}</h4>
+  <p class="title">${job}</p>
+  <p class="text">
+   ${text}
+  </p>
+<div class="quote-icon">
+<i class="fas fa-quote-right"></i>
+</div>
+ </article>`
+  })
+  .join('')
+
+const startSlider = (type) => {
+// get all three slides active,last next
+const active = document.querySelector('.active')
+const last = document.querySelector('.last')
+let next = active.nextElementSibling
+if (!next) {
+next = container.firstElementChild
 }
-// set backt to defaults
-function setBackToDefault() {
-grocery.value = "";
-editFlag = false;
-editID = "";
-submitBtn.textContent = "submit";
+active.classList.remove('active')
+last.classList.remove('last')
+next.classList.remove('next')
+
+if (type === 'prev') {
+active.classList.add('next')
+last.classList.add('active')
+next = last.previousElementSibling
+if (!next) {
+next = container.lastElementChild
 }
-
-// **\*\*** local storage \***\*\*\*\*\***
-
-// add to local storage
-function addToLocalStorage(id, value) {
-const grocery = { id, value };
-let items = getLocalStorage();
-items.push(grocery);
-localStorage.setItem("list", JSON.stringify(items));
+next.classList.remove('next')
+next.classList.add('last')
+return
 }
-
-function getLocalStorage() {
-return localStorage.getItem("list")
-? JSON.parse(localStorage.getItem("list"))
-: [];
+active.classList.add('last')
+last.classList.add('next')
+next.classList.add('active')
 }
+nextBtn.addEventListener('click', () => {
+startSlider()
+})
+prevBtn.addEventListener('click', () => {
+startSlider('prev')
+})
 
-function removeFromLocalStorage(id) {
-let items = getLocalStorage();
+const people = [
+{
+img:
+"https://res.cloudinary.com/diqqf3eq2/image/upload/c_scale,w_200/v1595959121/person-1_aufeoq.jpg",
+name: "peter doe",
+job: "product manager",
+text: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Quidem quoeius recusandae officia voluptas sint deserunt dicta nihil nam omnis? `,
+},
+{
+img:
+"https://res.cloudinary.com/diqqf3eq2/image/upload/c_scale,w_200/v1595959131/person-2_ipcjws.jpg",
+name: "susan doe",
+job: "developer",
+text: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Quidem quoeius recusandae officia voluptas sint deserunt dicta nihil nam omnis?`,
+},
+{
+img:
+"https://res.cloudinary.com/diqqf3eq2/image/upload/c_scale,w_200/v1595959131/person-3_rxtqvi.jpg",
+name: "emma doe",
+job: "designer",
+text: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Quidem quoeius recusandae officia voluptas sint deserunt dicta nihil nam omnis?`,
+},
+];
 
-items = items.filter(function (item) {
-if (item.id !== id) {
-return item;
-}
-});
-
-localStorage.setItem("list", JSON.stringify(items));
-}
-function editLocalStorage(id, value) {
-let items = getLocalStorage();
-
-items = items.map(function (item) {
-if (item.id === id) {
-item.value = value;
-}
-return item;
-});
-localStorage.setItem("list", JSON.stringify(items));
-}
-
-// SETUP LOCALSTORAGE.REMOVEITEM('LIST');
-
-// **\*\*** setup items \***\*\*\*\*\***
-
-function setupItems() {
-let items = getLocalStorage();
-
-if (items.length > 0) {
-items.forEach(function (item) {
-createListItem(item.id, item.value);
-});
-container.classList.add("show-container");
-}
-}
-
-function createListItem(id, value) {
-const element = document.createElement("article");
-let attr = document.createAttribute("data-id");
-attr.value = id;
-element.setAttributeNode(attr);
-element.classList.add("grocery-item");
-element.innerHTML = `<p class="title">${value}</p> <div class="btn-container"> <!-- edit btn --> <button type="button" class="edit-btn"> <i class="fas fa-edit"></i> </button> <!-- delete btn --> <button type="button" class="delete-btn"> <i class="fas fa-trash"></i> </button> </div> `;
-// add event listeners to both buttons;
-const deleteBtn = element.querySelector(".delete-btn");
-deleteBtn.addEventListener("click", deleteItem);
-const editBtn = element.querySelector(".edit-btn");
-editBtn.addEventListener("click", editItem);
-
-// append child
-list.appendChild(element);
+export default people;
